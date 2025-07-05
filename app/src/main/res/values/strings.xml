@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">ArtRegister</string>
+    <string name="username">Username</string>
+    <string name="new_username">New Username</string>
+    <string name="new_piece">New Piece</string>
+
+    <string name="foo">Foo</string>
+    <string name="shit">Shit</string>
+</resources>
