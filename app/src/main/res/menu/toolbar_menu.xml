@@ -3,7 +3,7 @@
 
     <item
         android:id="@+id/menu_username"
-        android:title="@string/username" />
+        android:title="@string/user_settings" />
     <item
         android:id="@+id/menu_foo"
         android:title="@string/foo" />

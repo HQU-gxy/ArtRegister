@@ -2,8 +2,17 @@
     <string name="app_name">ArtRegister</string>
     <string name="username">Username</string>
     <string name="new_username">New Username</string>
+    <string name="user_settings">User Settings</string>
     <string name="new_piece">New Piece</string>
 
     <string name="foo">Foo</string>
     <string name="shit">Shit</string>
+
+    <string-array name="user_types">
+        <item>Collector</item>
+        <item>Creator</item>
+    </string-array>
+    
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="placeholder_string">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque euismod, nisi eu consectetur consectetur, nisl nisi consectetur nisi, euismod euismod nisi nisi euismod.</string>
 </resources>
