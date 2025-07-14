@@ -25,13 +25,15 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.delay
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import redstone.artregister.databinding.ActivityMainBinding
+
+private val Context.dataStore: DataStore<Preferences> by preferencesDataStore("settings")
 
 class MainActivity : AppCompatActivity() {
 
@@ -43,7 +45,6 @@ class MainActivity : AppCompatActivity() {
     private var nfcSupported = false
     private var cardIDGotten: String? = null
 
-    private val Context.dataStore: DataStore<Preferences> by preferencesDataStore("settings")
 
     companion object {
         const val TAG = "Main"
@@ -56,7 +57,7 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        @OptIn(DelicateCoroutinesApi::class) GlobalScope.launch {
+        lifecycleScope.launch {
             username = dataStore.data.map {
                 it[USERNAME_KEY] ?: "Shit"
             }.first()
@@ -94,49 +95,39 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun editUsernameDialog() {
-        val adbModifyUser = AlertDialog.Builder(this)
         val theView = inflate(this, R.layout.user_settings, null)
         val usernameInput = theView.findViewById<EditText>(R.id.usernameText)
         val userTypeSpinner = theView.findViewById<Spinner>(R.id.userTypeSpinner)
 
         userTypeSpinner.adapter = ArrayAdapter.createFromResource(
-            this, R.array.user_types, android.R.layout.simple_spinner_item
+            this, R.array.user_types, android.R.layout.simple_spinner_dropdown_item
         )
         userTypeSpinner.setSelection(usertype)
-//        userTypeSpinner.onItemSelectedListener = object : OnItemSelectedListener {
-//            override fun onItemSelected(
-//                parent: AdapterView<*>?,
-//                view: View?,
-//                position: Int,
-//                id: Long
-//            ) {
-//            }
-//
-//            override fun onNothingSelected(parent: AdapterView<*>?) {
-//                Log.i(TAG, "Nothing selected")
-//            }
-//
-//        }
-
         usernameInput.setText(username)
-        adbModifyUser.setTitle("Modify User")
-        adbModifyUser.setView(theView)
-        adbModifyUser.setPositiveButton(
-            "🆗"
-        ) { _, _ ->
-            @OptIn(DelicateCoroutinesApi::class) GlobalScope.launch {
-                username = usernameInput.text.toString()
-                usertype = userTypeSpinner.selectedItemId.toInt()
-                dataStore.edit {
-                    it[USERNAME_KEY] = username
-                    it[USERTYPE_KEY] = usertype
+
+        val adbModifyUser = AlertDialog.Builder(this)
+        adbModifyUser.apply {
+            setTitle("Modify User")
+            setView(theView)
+            setPositiveButton(
+                "🆗"
+            ) { _, _ ->
+                lifecycleScope.launch {
+                    username = usernameInput.text.toString()
+                    usertype = userTypeSpinner.selectedItemId.toInt()
+                    dataStore.edit {
+                        it[USERNAME_KEY] = username
+                        it[USERTYPE_KEY] = usertype
+                    }
+                    withContext(Dispatchers.Main) {
+                        recreate()
+                    }
                 }
-                switchFragment(usertype)
+                Toast.makeText(this@MainActivity, "Success", Toast.LENGTH_SHORT).show()
             }
-            Toast.makeText(this, "Success", Toast.LENGTH_SHORT).show()
+            setNegativeButton("🆖", null)
+            show()
         }
-        adbModifyUser.setNegativeButton("🆖", null)
-        adbModifyUser.show()
     }
 
     private fun switchFragment(id: Int) {
@@ -148,6 +139,13 @@ class MainActivity : AppCompatActivity() {
             }
         ).commit()
     }
+
+    fun isNFCSupported(): Boolean = nfcSupported
+    fun tryToGetCardID(): String? = cardIDGotten
+    fun clearCardID() {
+        cardIDGotten = null
+    }
+
 
     override fun onResume() {
         super.onResume()
