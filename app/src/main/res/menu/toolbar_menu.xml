@@ -5,6 +5,6 @@
         android:id="@+id/menu_username"
         android:title="@string/user_settings" />
     <item
-        android:id="@+id/menu_foo"
-        android:title="@string/foo" />
+        android:id="@+id/menu_server_address"
+        android:title="@string/server_address" />
 </menu>

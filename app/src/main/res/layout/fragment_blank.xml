@@ -13,4 +13,12 @@
         android:text="@string/placeholder_string"
         android:textSize="24sp" />
 
+    <Button
+        android:id="@+id/buttonReload"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="100dp"
+        android:text="@string/reload" />
+
 </FrameLayout>

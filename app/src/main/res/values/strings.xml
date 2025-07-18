@@ -1,15 +1,21 @@
 <resources>
     <string name="app_name">ArtRegister</string>
+    <string name="server_address">Server Address</string>
+    <string name="reload">Reload</string>
 
     <string name="user_settings">User Settings</string>
     <string name="username">Username</string>
     <string name="new_username">New Username</string>
+    <string name="loading">Loading…</string>
+    <string name="success">Success</string>
+    <string name="network_error">Network Error</string>
 
     <string name="new_piece">New Piece</string>
     <string name="piece_name">Piece Name</string>
     <string name="nfc_unsupported">NFC Not Supported!</string>
     <string name="scan_card_hint">Please scan the tag</string>
     <string name="card_scanned">Tag collected!</string>
+    <string name="name_empty">The name is empty!</string>
     <string name="commit">Commit</string>
 
     <string name="foo">Foo</string>
@@ -19,7 +25,7 @@
         <item>Collector</item>
         <item>Creator</item>
     </string-array>
-    
+
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="placeholder_string">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque euismod, nisi eu consectetur consectetur, nisl nisi consectetur nisi, euismod euismod nisi nisi euismod.</string>
 </resources>

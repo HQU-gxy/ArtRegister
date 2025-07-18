@@ -17,7 +17,10 @@ class BlankFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_blank, container, false)
+        val root = inflater.inflate(R.layout.fragment_blank, container, false)
+        val buttonReload = root.findViewById<View>(R.id.buttonReload)
+        buttonReload.setOnClickListener { requireActivity().recreate() }
+        return root
     }
 
 }

@@ -8,7 +8,7 @@
     tools:context=".CreatorFragment">
 
     <Button
-        android:id="@+id/button_new_piece"
+        android:id="@+id/buttonNewPiece"
         style="@style/Base.Theme.ArtRegister"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

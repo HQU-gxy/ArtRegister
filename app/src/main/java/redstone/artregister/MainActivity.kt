@@ -39,15 +39,20 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var nfcAdapter: NfcAdapter
-    private lateinit var username: String
-    private var usertype = 0  // 0 for collector, 1 for creator
+
+    private lateinit var serverAddress: String
+    private var username: String? = null
+    private var usertype: Int? = null  // 0 for collector, 1 for creator
+    private var userId = -1  // From the server, -1 means not logged in
 
     private var nfcSupported = false
     private var cardIDGotten: String? = null
 
+    private lateinit var client: ShittyClient
 
     companion object {
         const val TAG = "Main"
+        val SERVER_ADDRESS_KEY = stringPreferencesKey("server_address")
         val USERNAME_KEY = stringPreferencesKey("username")
         val USERTYPE_KEY = intPreferencesKey("usertype")
     }
@@ -58,19 +63,54 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         lifecycleScope.launch {
+            serverAddress = dataStore.data.map {
+                it[SERVER_ADDRESS_KEY] ?: "localhost:2333"
+            }.first()
+
             username = dataStore.data.map {
-                it[USERNAME_KEY] ?: "Shit"
+                it[USERNAME_KEY]
             }.first()
 
             usertype = dataStore.data.map {
-                it[USERTYPE_KEY] ?: 0
+                it[USERTYPE_KEY]
             }.first()
 
-            if (usertype >= resources.getStringArray(R.array.user_types).size) usertype = 0
+            if (username == null || usertype == null) {
+                withContext(Dispatchers.Main) {
+                    editUsernameDialog(false)
+                }
+                return@launch
+            }
+            if (usertype!! >= resources.getStringArray(R.array.user_types).size) {
+                Log.w(TAG, "Invalid usertype, setting it to 0")
+                usertype = 0
+            }
 
-            switchFragment(usertype)
+            client = ShittyClient(serverAddress)
+            val loadingDialog = createLoadingDialog(this@MainActivity)
+            Thread {
+                userId = client.getUserId(username!!)
+                runOnUiThread {
+                    loadingDialog.dismiss()
+                    if (userId == -1) {
+                        Toast.makeText(
+                            this@MainActivity, R.string.network_error, Toast.LENGTH_SHORT
+                        ).show()
+                        return@runOnUiThread
+                    }
+                    supportFragmentManager.beginTransaction().replace(
+                        R.id.fragmentContainerView, when (usertype) {
+                            0 -> CollectorFragment.newInstance(username!!)
+                            1 -> CreatorFragment.newInstance(username!!, userId)
+
+                            else -> BlankFragment()
+                        }
+                    ).commit()
+
+                }
+            }.start()
+
         }
-
 
         val testNfcAdapter = NfcAdapter.getDefaultAdapter(this)
         if (testNfcAdapter != null) {
@@ -85,7 +125,8 @@ class MainActivity : AppCompatActivity() {
                     true
                 }
 
-                R.id.menu_foo -> {
+                R.id.menu_server_address -> {
+                    editServerAddressDialog()
                     true
                 }
 
@@ -94,7 +135,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun editUsernameDialog() {
+    private fun editUsernameDialog(isCancellable: Boolean = true) {
         val theView = inflate(this, R.layout.user_settings, null)
         val usernameInput = theView.findViewById<EditText>(R.id.usernameText)
         val userTypeSpinner = theView.findViewById<Spinner>(R.id.userTypeSpinner)
@@ -102,42 +143,60 @@ class MainActivity : AppCompatActivity() {
         userTypeSpinner.adapter = ArrayAdapter.createFromResource(
             this, R.array.user_types, android.R.layout.simple_spinner_dropdown_item
         )
-        userTypeSpinner.setSelection(usertype)
-        usernameInput.setText(username)
+        usertype?.let { userTypeSpinner.setSelection(it) }
+        username?.let { usernameInput.setText(it) }
 
         val adbModifyUser = AlertDialog.Builder(this)
         adbModifyUser.apply {
             setTitle("Modify User")
             setView(theView)
+            setCancelable(isCancellable)
             setPositiveButton(
                 "🆗"
             ) { _, _ ->
+                username = usernameInput.text.toString()
+                usertype = userTypeSpinner.selectedItemId.toInt()
+
                 lifecycleScope.launch {
-                    username = usernameInput.text.toString()
-                    usertype = userTypeSpinner.selectedItemId.toInt()
                     dataStore.edit {
-                        it[USERNAME_KEY] = username
-                        it[USERTYPE_KEY] = usertype
+                        it[USERNAME_KEY] = username!!
+                        it[USERTYPE_KEY] = usertype!!
                     }
                     withContext(Dispatchers.Main) {
                         recreate()
                     }
                 }
-                Toast.makeText(this@MainActivity, "Success", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@MainActivity, R.string.success, Toast.LENGTH_SHORT).show()
             }
-            setNegativeButton("🆖", null)
+            if (isCancellable) setNegativeButton("🆖", null)
             show()
         }
     }
 
-    private fun switchFragment(id: Int) {
-        supportFragmentManager.beginTransaction().replace(
-            R.id.fragmentContainerView, when (id) {
-                0 -> CollectorFragment.newInstance(username)
-                1 -> CreatorFragment.newInstance(username)
-                else -> BlankFragment()
+    private fun editServerAddressDialog(isCancellable: Boolean = true) {
+        val addressInput = EditText(this)
+        addressInput.setText(serverAddress)
+
+        val adbEditAddress = AlertDialog.Builder(this)
+        adbEditAddress.apply {
+            setTitle("Edit Server Address")
+            setView(addressInput)
+            setCancelable(isCancellable)
+            setPositiveButton(
+                "🆗"
+            ) { _, _ ->
+                // Handle server address change
+                Toast.makeText(this@MainActivity, R.string.success, Toast.LENGTH_SHORT).show()
+                serverAddress = addressInput.text.toString()
+                lifecycleScope.launch {
+                    dataStore.edit {
+                        it[SERVER_ADDRESS_KEY] = serverAddress
+                    }
+                }
             }
-        ).commit()
+            if (isCancellable) setNegativeButton("🆖", null)
+            show()
+        }
     }
 
     fun isNFCSupported(): Boolean = nfcSupported
@@ -145,6 +204,8 @@ class MainActivity : AppCompatActivity() {
     fun clearCardID() {
         cardIDGotten = null
     }
+
+    fun getHttpClient(): ShittyClient = client
 
 
     override fun onResume() {
