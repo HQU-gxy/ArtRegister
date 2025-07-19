@@ -34,7 +34,7 @@ import kotlinx.coroutines.withContext
 import redstone.artregister.databinding.ActivityMainBinding
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore("settings")
-
+private lateinit var client: ShittyClient
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
@@ -48,7 +48,6 @@ class MainActivity : AppCompatActivity() {
     private var nfcSupported = false
     private var cardIDGotten: String? = null
 
-    private lateinit var client: ShittyClient
 
     companion object {
         const val TAG = "Main"
