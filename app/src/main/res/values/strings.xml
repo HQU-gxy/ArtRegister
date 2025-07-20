@@ -1,4 +1,4 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">ArtRegister</string>
     <string name="server_address">Server Address</string>
     <string name="reload">Reload</string>
@@ -8,7 +8,11 @@
     <string name="new_username">New Username</string>
     <string name="loading">Loading…</string>
     <string name="success">Success</string>
+    <string name="fail">Fail</string>
     <string name="network_error">Network Error</string>
+    <string name="creator">Creator</string>
+    <string name="owner">Owner</string>
+    <string name="on_sale">On Sale</string>
 
     <string name="new_piece">New Piece</string>
     <string name="piece_name">Piece Name</string>
@@ -17,6 +21,8 @@
     <string name="card_scanned">Tag collected!</string>
     <string name="name_empty">The name is empty!</string>
     <string name="commit">Commit</string>
+    <string name="my_creations">My Creations</string>
+    <string name="no_creation">No Creation Is Found</string>
 
     <string name="foo">Foo</string>
     <string name="shit">Shit</string>
@@ -27,5 +33,5 @@
     </string-array>
 
     <string name="hello_blank_fragment">Hello blank fragment</string>
-    <string name="placeholder_string">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque euismod, nisi eu consectetur consectetur, nisl nisi consectetur nisi, euismod euismod nisi nisi euismod.</string>
+    <string name="placeholder_string" tools:ignore="Typos">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque euismod, nisi eu consectetur consectetur, nisl nisi consectetur nisi, euismod euismod nisi nisi euismod.</string>
 </resources>

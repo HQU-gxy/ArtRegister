@@ -35,6 +35,7 @@ import redstone.artregister.databinding.ActivityMainBinding
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore("settings")
 private lateinit var client: ShittyClient
+
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
@@ -99,7 +100,7 @@ class MainActivity : AppCompatActivity() {
                     }
                     supportFragmentManager.beginTransaction().replace(
                         R.id.fragmentContainerView, when (usertype) {
-                            0 -> CollectorFragment.newInstance(username!!)
+                            0 -> CollectorFragment.newInstance(username!!, userId)
                             1 -> CreatorFragment.newInstance(username!!, userId)
 
                             else -> BlankFragment()

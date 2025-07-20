@@ -14,6 +14,8 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -50,6 +52,8 @@ class CreatorFragment : Fragment() {
         val newPieceButton = root.findViewById<Button>(R.id.buttonNewPiece)
         newPieceButton.setOnClickListener { onNewPieceButtonClicked() }
 
+        val getPieceListButton = root.findViewById<Button>(R.id.buttonGetPieceList)
+        getPieceListButton.setOnClickListener { onGetPieceListButtonClicked() }
         // Inflate the layout for this fragment
         return root
     }
@@ -96,18 +100,20 @@ class CreatorFragment : Fragment() {
                 setView(ProgressBar(context))
             }.show()
 
-            lifecycleScope.launch {
-                // Wait for the result from the server
-                Thread {
-                    client.submitNewPiece(userId!!, pieceName, cardID!!)
-                }.start()
-
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(context, R.string.success, Toast.LENGTH_SHORT).show()
+            // Wait for the result from the server
+            Thread {
+                val success = client.submitNewPiece(userId!!, pieceName, cardID!!)
+                requireActivity().runOnUiThread {
+                    if (success) {
+                        Toast.makeText(context, R.string.success, Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(context, R.string.fail, Toast.LENGTH_SHORT).show()
+                    }
                     loadingDialog.dismiss()
                     newPieceDialog.dismiss()
                 }
-            }
+            }.start()
+
         }
 
         // Wait for a card scanned
@@ -125,6 +131,72 @@ class CreatorFragment : Fragment() {
         }
     }
 
+
+    private fun onGetPieceListButtonClicked() {
+        Log.d(TAG, "Get piece list!")
+        val pieceListView = RecyclerView(requireContext())
+        pieceListView.layoutManager = LinearLayoutManager(context)
+
+
+        val adbPiecesList = AlertDialog.Builder(context).apply {
+            setTitle(R.string.my_creations)
+            setView(pieceListView)
+            setNegativeButton("Close", null)
+        }
+        val loadingDialog = createLoadingDialog(requireContext())
+        Thread {
+            val creations = client.getCreations(userId!!)
+            requireActivity().runOnUiThread {
+                loadingDialog.dismiss()
+
+                creations?.let {
+                    if (creations.isEmpty()) {
+                        Toast.makeText(
+                            context, R.string.no_creation, Toast.LENGTH_SHORT
+                        ).show()
+                        return@runOnUiThread
+                    }
+
+                    pieceListView.adapter = PieceListAdapter(creations)
+                    adbPiecesList.show()
+                    return@runOnUiThread
+                }
+                Toast.makeText(context, R.string.fail, Toast.LENGTH_SHORT).show()
+            }
+        }.start()
+    }
+
+    private class PieceListAdapter(private val dataSet: List<PieceInfo>) :
+        RecyclerView.Adapter<PieceListAdapter.PieceViewHolder>() {
+        class PieceViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+            val pieceNameText: TextView = view.findViewById(R.id.textPieceName)
+            val creatorNameText: TextView = view.findViewById(R.id.textCreatorName)
+            val ownerNameText: TextView = view.findViewById(R.id.textOwnerName)
+        }
+
+        override fun onCreateViewHolder(
+            parent: ViewGroup, viewType: Int
+        ): PieceViewHolder {
+            // Inflate your item layout and return a ViewHolder
+            val view =
+                LayoutInflater.from(parent.context).inflate(R.layout.piece_list_item, parent, false)
+
+            return PieceViewHolder(view)
+        }
+
+        override fun onBindViewHolder(holder: PieceViewHolder, position: Int) {
+            if (position == 0) // The first item is a header
+                return
+            holder.pieceNameText.text = dataSet[position - 1].pieceName
+            holder.creatorNameText.text = dataSet[position - 1].creatorName
+            holder.ownerNameText.text = dataSet[position - 1].ownerName
+        }
+
+        override fun getItemCount() = dataSet.size + 1
+
+
+    }
+
     companion object {
         /**
          * Use this factory method to create a new instance of
@@ -135,12 +207,11 @@ class CreatorFragment : Fragment() {
          * @return A new instance of fragment CreatorFragment.
          */
         @JvmStatic
-        fun newInstance(username: String, userId: Int) =
-            CreatorFragment().apply {
-                arguments = Bundle().apply {
-                    putString("username", username)
-                    putInt("user_id", userId)
-                }
+        fun newInstance(username: String, userId: Int) = CreatorFragment().apply {
+            arguments = Bundle().apply {
+                putString("username", username)
+                putInt("user_id", userId)
             }
+        }
     }
 }
