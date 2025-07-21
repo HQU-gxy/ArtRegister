@@ -88,6 +88,7 @@ class MainActivity : AppCompatActivity() {
 
             client = ShittyClient(serverAddress)
             val loadingDialog = createLoadingDialog(this@MainActivity)
+            loadingDialog.show()
             Thread {
                 userId = client.getUserId(username!!)
                 runOnUiThread {

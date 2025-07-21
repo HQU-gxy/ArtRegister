@@ -41,12 +41,12 @@ class CreatorFragment : Fragment() {
             userId = it.getInt("user_id")
         }
         mainActivity = activity as MainActivity
+        client = mainActivity.getHttpClient()
     }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View? {
-        client = mainActivity.getHttpClient()
         val root = inflater.inflate(R.layout.fragment_creator, container, false)
 
         val newPieceButton = root.findViewById<Button>(R.id.buttonNewPiece)
@@ -104,13 +104,18 @@ class CreatorFragment : Fragment() {
             Thread {
                 val success = client.submitNewPiece(userId!!, pieceName, cardID!!)
                 requireActivity().runOnUiThread {
-                    if (success) {
-                        Toast.makeText(context, R.string.success, Toast.LENGTH_SHORT).show()
-                    } else {
-                        Toast.makeText(context, R.string.fail, Toast.LENGTH_SHORT).show()
-                    }
                     loadingDialog.dismiss()
                     newPieceDialog.dismiss()
+
+                    success?.let {
+                        Toast.makeText(
+                            context,
+                            if (success) R.string.success else R.string.fail,
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        return@runOnUiThread
+                    }
+                    Toast.makeText(context, R.string.network_error, Toast.LENGTH_SHORT).show()
                 }
             }.start()
 
@@ -144,6 +149,7 @@ class CreatorFragment : Fragment() {
             setNegativeButton("Close", null)
         }
         val loadingDialog = createLoadingDialog(requireContext())
+        loadingDialog.show()
         Thread {
             val creations = client.getCreations(userId!!)
             requireActivity().runOnUiThread {

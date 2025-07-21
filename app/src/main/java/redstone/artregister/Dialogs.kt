@@ -11,7 +11,7 @@ fun createLoadingDialog(context: Context): AlertDialog =
         setTitle(R.string.loading)
         setView(ProgressBar(context))
         setCancelable(false)
-    }.show()
+    }.create()
 
 fun createReloadDialog(activity: Activity, title: String): AlertDialog {
     val button = Button(activity).apply {

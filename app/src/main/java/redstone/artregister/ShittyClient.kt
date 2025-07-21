@@ -15,10 +15,7 @@ import redstone.artregister.MainActivity.Companion.TAG
  */
 class ShittyClient(private val serverAddress: String) {
     private enum class Status {
-        OK,
-        NOT_FOUND,
-        ALREADY_EXISTS,
-        VALUE_ERROR,
+        OK, NOT_FOUND, ALREADY_EXISTS, VALUE_ERROR,
     }
 
     private val httpClient = OkHttpClient.Builder().connectTimeout(
@@ -83,19 +80,17 @@ class ShittyClient(private val serverAddress: String) {
      * @param pieceName The name of the piece being submitted.
      * @param cardID The UID of the tag associated with the piece.
      */
-    fun submitNewPiece(userId: Int, pieceName: String, cardID: String): Boolean {
+    fun submitNewPiece(userId: Int, pieceName: String, cardID: String): Boolean? {
         val formBodyBuilder = FormBody.Builder()
         formBodyBuilder.add("user_id", userId.toString())
         formBodyBuilder.add("piece_name", pieceName)
         formBodyBuilder.add("piece_uid", cardID)
         val formBody = formBodyBuilder.build()
 
-        val request = Request.Builder()
-            .url("http://$serverAddress/new_piece").post(formBody).build()
+        val request =
+            Request.Builder().url("http://$serverAddress/new_piece").post(formBody).build()
 
         try {
-
-
             val responseText = httpClient.newCall(request).execute().body.string()
             Log.d(TAG, "Submit new piece response: $responseText")
             val (status, value) = parseResponse(responseText)
@@ -107,22 +102,22 @@ class ShittyClient(private val serverAddress: String) {
             return true
         } catch (e: Exception) {
             Log.e(TAG, "Error submitting new piece", e)
-            return false
+            return null
         }
     }
 
     fun getCreations(userId: Int): List<PieceInfo>? {
-        val request = Request.Builder()
-            .url("http://$serverAddress/creator_get_pieces?user_id=$userId").get().build()
+        val request =
+            Request.Builder().url("http://$serverAddress/creator_get_pieces?user_id=$userId").get()
+                .build()
 
         try {
             val responseText = httpClient.newCall(request).execute().body.string()
 
-            Log.d(TAG, "Login response: $responseText")
+            Log.d(TAG, "Get creations response: $responseText")
             val (status, value) = parseResponse(responseText)
             when (status) {
                 Status.OK -> {
-                    Log.d(TAG, "Creations received successfully.")
                     val pieces = value as JSONArray
                     val pieceList = mutableListOf<PieceInfo>()
                     for (i in 0 until pieces.length()) {
@@ -134,12 +129,52 @@ class ShittyClient(private val serverAddress: String) {
                         )
                         pieceList.add(pieceInfo)
                     }
+                    Log.d(TAG, "Creations received successfully.")
                     return pieceList
                 }
 
                 Status.NOT_FOUND -> {
                     Log.i(TAG, "No creations found for user ID $userId")
                     return emptyList()
+                }
+
+                else -> {
+                    Log.e(TAG, "Error getting creations: $value")
+                    return null
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error getting creations", e)
+            return null
+        }
+    }
+
+    fun getPieceInfo(cardId: String): PieceInfo? {
+        val request =
+            Request.Builder().url("http://$serverAddress/get_piece_info?piece_uid=$cardId").get()
+                .build()
+
+        try {
+            val responseText = httpClient.newCall(request).execute().body.string()
+
+            Log.d(TAG, "Get piece info response: $responseText")
+            val (status, value) = parseResponse(responseText)
+            when (status) {
+                Status.OK -> {
+                    value as JSONObject
+                    val pieceInfo = PieceInfo(
+                        value.getString("name"),
+                        value.getString("creator"),
+                        value.getString("owner"),
+                        value.getBoolean("on_sale")
+                    )
+                    Log.d(TAG, "Find piece info successfully.")
+                    return pieceInfo
+                }
+
+                Status.NOT_FOUND -> {
+                    Log.i(TAG, "Failed to find piece info for card ID $cardId")
+                    return PieceInfo(null, null, null)
                 }
 
                 else -> {
