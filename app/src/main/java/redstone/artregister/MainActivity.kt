@@ -171,10 +171,14 @@ class MainActivity : AppCompatActivity() {
                         it[USERTYPE_KEY] = usertype!!
                     }
                     withContext(Dispatchers.Main) {
-                        recreate()
+                        Toast.makeText(this@MainActivity, R.string.success, Toast.LENGTH_SHORT).show()
+                        val intent = packageManager.getLaunchIntentForPackage(packageName)
+                        intent?.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
+                        startActivity(intent)
+                        finish()
+                        Runtime.getRuntime().exit(0)
                     }
                 }
-                Toast.makeText(this@MainActivity, R.string.success, Toast.LENGTH_SHORT).show()
             }
             if (isCancellable) setNegativeButton("🆖", null)
             show()

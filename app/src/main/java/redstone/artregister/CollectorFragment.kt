@@ -80,7 +80,7 @@ class CollectorFragment : Fragment() {
                                 pieceNameText.text = pieceInfo.pieceName
                                 // Set the text to "You" if the username matches
                                 if (pieceInfo.creatorName == username) {
-                                    creatorNameText.text = getString(R.string.you)
+                                    creatorNameText.setText(R.string.you)
                                     creatorNameText.setTextColor(Color.GREEN)
                                 } else {
                                     creatorNameText.text = pieceInfo.creatorName
@@ -98,7 +98,7 @@ class CollectorFragment : Fragment() {
                                             cardId
                                         )
                                     }
-                                    ownerNameText.text = getString(R.string.you)
+                                    ownerNameText.setText(R.string.you)
                                     ownerNameText.setTextColor(Color.GREEN)
                                 } else {
                                     transferButton.visibility = View.INVISIBLE
@@ -259,7 +259,7 @@ class CollectorFragment : Fragment() {
             val newOwner = dataSet[position - 1].newOwner
 
             if (oldOwner == username) {
-                holder.oldOwnerText.text = context.getString(R.string.you)
+                holder.oldOwnerText.setText(R.string.you)
                 holder.oldOwnerText.setTextColor(Color.GREEN)
             } else {
                 holder.oldOwnerText.text = oldOwner
@@ -267,7 +267,7 @@ class CollectorFragment : Fragment() {
             }
 
             if (newOwner == username) {
-                holder.newOwnerText.text = context.getString(R.string.you)
+                holder.newOwnerText.setText(R.string.you)
                 holder.newOwnerText.setTextColor(Color.GREEN)
             } else {
                 holder.newOwnerText.text = newOwner
