@@ -15,6 +15,7 @@ import android.util.Log
 import android.view.View.inflate
 import android.widget.ArrayAdapter
 import android.widget.EditText
+import android.widget.ProgressBar
 import android.widget.Spinner
 import android.widget.Toast
 import androidx.annotation.RequiresApi
@@ -49,6 +50,7 @@ class MainActivity : AppCompatActivity() {
     private var nfcSupported = false
     private var cardIDGotten: String? = null
 
+    private lateinit var loadingDialog: AlertDialog
 
     companion object {
         const val TAG = "Main"
@@ -77,7 +79,7 @@ class MainActivity : AppCompatActivity() {
 
             if (username == null || usertype == null) {
                 withContext(Dispatchers.Main) {
-                    editUsernameDialog(false)
+                    editUserDialog(false)
                 }
                 return@launch
             }
@@ -87,10 +89,15 @@ class MainActivity : AppCompatActivity() {
             }
 
             client = ShittyClient(serverAddress)
-            val loadingDialog = createLoadingDialog(this@MainActivity)
+            loadingDialog = AlertDialog.Builder(this@MainActivity).apply {
+                setTitle(R.string.loading)
+                setView(ProgressBar(context))
+                setCancelable(false)
+            }.create()
+
             loadingDialog.show()
             Thread {
-                userId = client.getUserId(username!!)
+                userId = client.getOrCreateUserId(username!!)
                 runOnUiThread {
                     loadingDialog.dismiss()
                     if (userId == -1) {
@@ -122,7 +129,7 @@ class MainActivity : AppCompatActivity() {
         binding.topBar.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 R.id.menu_username -> {
-                    editUsernameDialog()
+                    editUserDialog()
                     true
                 }
 
@@ -136,7 +143,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun editUsernameDialog(isCancellable: Boolean = true) {
+    private fun editUserDialog(isCancellable: Boolean = true) {
         val theView = inflate(this, R.layout.user_settings, null)
         val usernameInput = theView.findViewById<EditText>(R.id.usernameText)
         val userTypeSpinner = theView.findViewById<Spinner>(R.id.userTypeSpinner)
@@ -189,6 +196,7 @@ class MainActivity : AppCompatActivity() {
                 // Handle server address change
                 Toast.makeText(this@MainActivity, R.string.success, Toast.LENGTH_SHORT).show()
                 serverAddress = addressInput.text.toString()
+                client.setServerAddress(serverAddress)
                 lifecycleScope.launch {
                     dataStore.edit {
                         it[SERVER_ADDRESS_KEY] = serverAddress
@@ -207,7 +215,17 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun getHttpClient(): ShittyClient = client
+    fun showLoadingDialog() {
+        if (!loadingDialog.isShowing) {
+            loadingDialog.show()
+        }
+    }
 
+    fun dismissLoadingDialog() {
+        if (loadingDialog.isShowing) {
+            loadingDialog.dismiss()
+        }
+    }
 
     override fun onResume() {
         super.onResume()

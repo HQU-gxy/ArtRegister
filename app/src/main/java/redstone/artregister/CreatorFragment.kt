@@ -1,6 +1,8 @@
 package redstone.artregister
 
 import android.app.AlertDialog
+import android.content.Context
+import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -9,7 +11,6 @@ import android.view.View.inflate
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
-import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
@@ -95,16 +96,13 @@ class CreatorFragment : Fragment() {
             val pieceName = pieceNameInput.text.toString()
             Log.i(TAG, "Piece: $pieceName, ID: $cardID")
             // Create a loading dialog
-            val loadingDialog = AlertDialog.Builder(context).apply {
-                setCancelable(false)
-                setView(ProgressBar(context))
-            }.show()
+            mainActivity.showLoadingDialog()
 
             // Wait for the result from the server
             Thread {
                 val success = client.submitNewPiece(userId!!, pieceName, cardID!!)
                 requireActivity().runOnUiThread {
-                    loadingDialog.dismiss()
+                    mainActivity.dismissLoadingDialog()
                     newPieceDialog.dismiss()
 
                     success?.let {
@@ -148,13 +146,11 @@ class CreatorFragment : Fragment() {
             setView(pieceListView)
             setNegativeButton("Close", null)
         }
-        val loadingDialog = createLoadingDialog(requireContext())
-        loadingDialog.show()
+        mainActivity.showLoadingDialog()
         Thread {
             val creations = client.getCreations(userId!!)
             requireActivity().runOnUiThread {
-                loadingDialog.dismiss()
-
+                mainActivity.dismissLoadingDialog()
                 creations?.let {
                     if (creations.isEmpty()) {
                         Toast.makeText(
@@ -163,7 +159,8 @@ class CreatorFragment : Fragment() {
                         return@runOnUiThread
                     }
 
-                    pieceListView.adapter = PieceListAdapter(creations)
+                    pieceListView.adapter =
+                        PieceListAdapter(creations, username!!, requireContext())
                     adbPiecesList.show()
                     return@runOnUiThread
                 }
@@ -172,11 +169,14 @@ class CreatorFragment : Fragment() {
         }.start()
     }
 
-    private class PieceListAdapter(private val dataSet: List<PieceInfo>) :
+    private class PieceListAdapter(
+        private val dataSet: List<PieceInfo>,
+        private val username: String,
+        private val context: Context
+    ) :
         RecyclerView.Adapter<PieceListAdapter.PieceViewHolder>() {
         class PieceViewHolder(view: View) : RecyclerView.ViewHolder(view) {
             val pieceNameText: TextView = view.findViewById(R.id.textPieceName)
-            val creatorNameText: TextView = view.findViewById(R.id.textCreatorName)
             val ownerNameText: TextView = view.findViewById(R.id.textOwnerName)
         }
 
@@ -194,13 +194,17 @@ class CreatorFragment : Fragment() {
             if (position == 0) // The first item is a header
                 return
             holder.pieceNameText.text = dataSet[position - 1].pieceName
-            holder.creatorNameText.text = dataSet[position - 1].creatorName
-            holder.ownerNameText.text = dataSet[position - 1].ownerName
+            val ownerName = dataSet[position - 1].ownerName
+            if (ownerName == username) {
+                holder.ownerNameText.text = context.getString(R.string.you)
+                holder.ownerNameText.setTextColor(Color.GREEN)
+            } else {
+                holder.ownerNameText.text = ownerName
+                holder.ownerNameText.setTextColor(context.getColor(R.color.my_dark_text_color))
+            }
         }
 
         override fun getItemCount() = dataSet.size + 1
-
-
     }
 
     companion object {
