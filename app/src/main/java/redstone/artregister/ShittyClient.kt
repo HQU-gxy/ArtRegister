@@ -13,7 +13,7 @@ import redstone.artregister.MainActivity.Companion.TAG
  *
  * All the network operations are blocking, so they should be called from a background thread.
  */
-class ShittyClient(private val serverAddress: String) {
+class ShittyClient(private var serverAddress: String) {
     private enum class Status {
         OK, NOT_FOUND, ALREADY_EXISTS, VALUE_ERROR,
     }
@@ -21,6 +21,10 @@ class ShittyClient(private val serverAddress: String) {
     private val httpClient = OkHttpClient.Builder().connectTimeout(
         5, java.util.concurrent.TimeUnit.SECONDS
     ).build()
+
+    fun setServerAddress(newAddress: String) {
+        serverAddress = newAddress
+    }
 
     /**
      * Parse the response from the server.
@@ -47,7 +51,7 @@ class ShittyClient(private val serverAddress: String) {
      * @param username The username for which to retrieve the user ID.
      * @return The user ID as an integer, or -1 if an error occurs.
      */
-    fun getUserId(username: String): Int {
+    fun getOrCreateUserId(username: String): Int {
         val request =
             Request.Builder().url("http://$serverAddress/get_user_id?username=$username").get()
                 .build()
@@ -67,6 +71,39 @@ class ShittyClient(private val serverAddress: String) {
         } catch (e: Exception) {
             Log.e(TAG, "Error getting user ID", e)
             return -1
+        }
+    }
+
+    fun getUserId(username: String): Int? {
+        val request =
+            Request.Builder().url("http://$serverAddress/check_user_exist?username=$username").get()
+                .build()
+        try {
+            val responseText = httpClient.newCall(request).execute().body.string()
+
+            Log.d(TAG, "Login response: $responseText")
+            val (status, value) = parseResponse(responseText)
+
+            when (status) {
+                Status.OK -> {
+                    Log.d(TAG, "User ID: $value")
+                    return value as Int
+                }
+
+                Status.NOT_FOUND -> {
+                    Log.e(TAG, "User $username doesn't exist")
+                    return -1
+                }
+
+                else -> {
+                    Log.e(TAG, "Error getting user ID: $value")
+                    return null
+                }
+            }
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error getting user ID", e)
+            return null
         }
     }
 
@@ -184,6 +221,79 @@ class ShittyClient(private val serverAddress: String) {
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error getting creations", e)
+            return null
+        }
+    }
+
+    fun getTransactions(cardId: String): List<Transaction>? {
+        val request =
+            Request.Builder().url("http://$serverAddress/get_piece_transactions?piece_uid=$cardId")
+                .get()
+                .build()
+
+        try {
+            val responseText = httpClient.newCall(request).execute().body.string()
+
+            Log.d(TAG, "Get transactions response: $responseText")
+            val (status, value) = parseResponse(responseText)
+            when (status) {
+                Status.OK -> {
+                    value as JSONArray
+                    val transactions = mutableListOf<Transaction>()
+                    for (i in 0 until value.length()) {
+                        val transJSON = value.getJSONObject(i)
+                        val transaction = Transaction(
+                            transJSON.getString("old_owner"),
+                            transJSON.getString("new_owner"),
+                            transJSON.getString("dt")
+                        )
+                        transactions.add(transaction)
+                    }
+                    Log.d(TAG, "Transaction received successfully.")
+                    return transactions
+                }
+
+                Status.NOT_FOUND -> {
+                    Log.i(TAG, "No transaction found for piece UID $cardId")
+                    return emptyList()
+                }
+
+                else -> {
+                    Log.e(TAG, "Error getting transaction: $value")
+                    return null
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error getting transaction", e)
+            return null
+        }
+    }
+
+    fun submitTransfer(
+        userId: Int, cardId: String, newOwnerID: Int
+    ): Boolean? {
+        val formBodyBuilder = FormBody.Builder()
+        formBodyBuilder.add("piece_uid", cardId)
+        formBodyBuilder.add("old_owner_id", userId.toString())
+        formBodyBuilder.add("new_owner_id", newOwnerID.toString())
+        val formBody = formBodyBuilder.build()
+
+        val request =
+            Request.Builder().url("http://$serverAddress/new_transaction").post(formBody).build()
+
+        try {
+            val responseText = httpClient.newCall(request).execute().body.string()
+            Log.d(TAG, "Submit transfer response: $responseText")
+            val (status, value) = parseResponse(responseText)
+            if (status != Status.OK) {
+                Log.e(TAG, "Error submitting transfer: $value")
+                return false
+            }
+
+            Log.d(TAG, "Transfer submitted successfully.")
+            return true
+        } catch (e: Exception) {
+            Log.e(TAG, "Error submitting transfer", e)
             return null
         }
     }

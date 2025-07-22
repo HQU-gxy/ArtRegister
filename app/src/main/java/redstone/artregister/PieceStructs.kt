@@ -10,3 +10,9 @@ class PieceInfo(
         return "Piece Name: $pieceName, Creator: $creatorName, Owner: $ownerName"
     }
 }
+
+class Transaction(
+    val oldOwner: String,
+    val newOwner: String,
+    val dt: String
+) {}

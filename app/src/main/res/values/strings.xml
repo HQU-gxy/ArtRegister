@@ -14,6 +14,9 @@
     <string name="creator">Creator</string>
     <string name="owner">Owner</string>
     <string name="on_sale">On Sale</string>
+    <string name="old_owner">Old Owner</string>
+    <string name="new_owner">New Owner</string>
+    <string name="dt">Date/Time</string>
 
     <string name="new_piece">New Piece</string>
     <string name="piece_name">Piece Name</string>
@@ -23,8 +26,13 @@
     <string name="name_empty">The name is empty!</string>
     <string name="commit">Commit</string>
     <string name="my_creations">My Creations</string>
-    <string name="no_creation">No Creation Is Found</string>
-    <string name="piece_not_found">No Such Piece Is Found</string>
+    <string name="no_creation">No creation is found</string>
+    <string name="piece_not_found">No such piece is found</string>
+    <string name="user_not_found">User not found</string>
+    <string name="view_transactions">View Transactions</string>
+    <string name="no_transaction">No transaction is found</string>
+    <string name="transfer">Transfer</string>
+    <string name="cannot_transfer_self">Cannot transfer to yourself!</string>
 
     <string name="foo">Foo</string>
     <string name="shit">Shit</string>
